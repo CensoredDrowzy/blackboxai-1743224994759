@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Auth check
+        if(!localStorage.getItem('adminAuth')) {
+            window.location.href = 'login.html';
+        }
+
+        async function addProduct(product) {
+            try {
+                // Dynamic API URL based on environment
+                const apiBase = window.location.hostname === 'localhost' 
+                    ? 'http://localhost:3001' 
+                    : '';
+                const response = await fetch(`${apiBase}/admin/products`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('adminAuth')}`
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(product)
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                return {success: false, error: 'Failed to connect to server'};
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('productForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const product = Object.fromEntries(formData.entries());
+                
+                const result = await addProduct(product);
+                if(result.success) {
+                    alert('Product added successfully!');
+                    e.target.reset();
+                } else {
+                    alert(`Error: ${result.error || 'Failed to add product'}`);
+                }
+            });
+        });
+    </script>
+</head>
+<body class="bg-gray-900 text-white p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-2xl font-bold mb-6">Add Product</h1>
+        <form id="productForm" class="space-y-4">
+            <div>
+                <label class="block mb-2">Name</label>
+                <input type="text" name="name" required class="w-full p-2 bg-gray-700 rounded">
+            </div>
+            <div>
+                <label class="block mb-2">Price</label>
+                <input type="number" name="price" step="0.01" required class="w-full p-2 bg-gray-700 rounded">
+            </div>
+            <div>
+                <label class="block mb-2">SellHub ID</label>
+                <input type="text" name="sellhubId" required class="w-full p-2 bg-gray-700 rounded">
+            </div>
+            <button type="submit" class="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700">
+                Add Product
+            </button>
+        </form>
+    </div>
+</body>
+</html>
