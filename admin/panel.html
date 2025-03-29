@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        // Check auth
+        if(!localStorage.getItem('adminToken') || localStorage.getItem('adminToken') !== 'secure-token') {
+            window.location.href = 'login-new.html';
+        }
+
+        // API configuration
+        const API_BASE = {
+            add: 'api.php',
+            list: 'get-products.php'
+        };
+
+        // Load existing products on page load
+        async function loadProducts() {
+            try {
+                const response = await fetch(API_BASE.list);
+                const products = await response.json();
+                // Display products in UI
+                console.log('Loaded products:', products);
+            } catch (error) {
+                console.error('Failed to load products:', error);
+            }
+        }
+
+        // Call on page load
+        loadProducts();
+
+        async function addProduct() {
+            const form = document.getElementById('productForm');
+            const formData = new FormData(form);
+            const product = Object.fromEntries(formData.entries());
+            product.price = parseFloat(product.price);
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/products`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                    },
+                    body: JSON.stringify(product)
+                });
+                
+                const result = await response.json();
+                if(result.success) {
+                    alert('Product added successfully!');
+                    form.reset();
+                } else {
+                    alert(`Error: ${result.error}`);
+                }
+            } catch (error) {
+                alert('Failed to connect to server');
+                console.error(error);
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-6">
+        <h1 class="text-2xl font-bold mb-6">Admin Panel</h1>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Add New Product</h2>
+            <form id="productForm" onsubmit="event.preventDefault(); addProduct();" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Product Name</label>
+                    <input type="text" name="name" required 
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Price</label>
+                    <input type="number" step="0.01" name="price" required
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Sellhub ID</label>
+                    <input type="text" name="sellhubId" required
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                </div>
+                
+                <button type="submit" 
+                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Add Product
+                </button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
